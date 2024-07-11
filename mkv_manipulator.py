@@ -7,7 +7,8 @@ import shutil
 
 class Manipulator:
     def __init__(self, file_path, a_language_priority: list, s_language_priority: list,
-                 a_codec_priority, s_codec_priority, add_srt: bool, convert_audio: dict, move_completed_files: bool):
+                 a_codec_priority, s_codec_priority, add_srt: bool, convert_audio: dict, move_completed_files: bool,
+                 nan_language: str):
         self.path = Path(file_path)
         self.files = []
         self._initialize_files()
@@ -23,6 +24,8 @@ class Manipulator:
         self.convert_audio = convert_audio
 
         self.move_completed_files = move_completed_files
+
+        self.nan_language = nan_language
 
     def _initialize_files(self):
 
@@ -135,8 +138,7 @@ class Manipulator:
 
         print()
 
-    @staticmethod
-    def get_probe_df(file):
+    def get_probe_df(self, file):
 
         probe = ffmpeg.probe(file)
 
@@ -147,6 +149,7 @@ class Manipulator:
 
         if 'tags.language' in streams_df.columns:
             streams_df['tags.language'] = streams_df['tags.language'].replace('deu', 'ger')
+            streams_df['tags.language'].fillna(self.nan_language, inplace=True)
 
         return streams_df
 
@@ -208,6 +211,7 @@ class Manipulator:
             for language in self.s_language_priority:
                 language_filtered_streams = sub_streams[
                     (sub_streams['tags.language'] == language) & (sub_streams['disposition.forced'] == 0)]
+                print(language_filtered_streams)
                 prioritized_streams = self.prioritize_streams(language_filtered_streams)
                 codec_type_count_list.extend(prioritized_streams.index.tolist())
 
@@ -338,11 +342,14 @@ manipulator = Manipulator(file_path=path,
                           s_codec_priority=['ass', 'subrip', 'hdmv_pgs_subtitle'],
 
                           add_srt=True,
-                          # srt needs to be in the same directory and have the same name
+
                           convert_audio={},
                           # {"dts": {"format": "ac3", "bitrate": "640k"}} # exp: will convert all dts audio streams to ac3 640k
-                          move_completed_files=False
-                          # will move processed file(s) to a new dir and rename the completed file to the original name. Will not delete anything!
+                          move_completed_files=False,
+                          # will move completed files to a new dir and rename the completed file to the original name
+                          nan_language="ger"
+                          # sometimes the language of subtitles or audio is not specified. Check before (with manipulate..print_stream_info(file))
+                          # and then define it manually here. Will replace all NaN tags.language with "ger" for example
                           )
 
 manipulator.manipulate_mkv()
