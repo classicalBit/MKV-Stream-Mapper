@@ -342,7 +342,7 @@ manipulator = Manipulator(file_path=path,
                           convert_audio={},
                           # {"dts": {"format": "ac3", "bitrate": "640k"}} # exp: will convert all dts audio streams to ac3 640k
                           move_completed_files=False
-                          # will move completed file(s) to a new dir and rename the completed file to the original name
+                          # will move prcessed file(s) to a new dir and rename the completed file to the original name. Will not delete anything! Try it out :)
                           )
 
 manipulator.manipulate_mkv()
