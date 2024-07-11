@@ -6,12 +6,15 @@ You just downloaded Anime MKV files or other MKV files and want to quickly renam
 
 ## Features
 
--Audio and Subtitle Prioritization: Prioritize audio and subtitle streams based on language and codec preferences.
+-Audio and Subtitle Prioritization: Prioritize and map/order audio and subtitle streams based on language and codec preferences.
 
--Subtitle Addition: Option to add external subtitle files (SRT) to MKV videos.
+-Subtitle Addition: Option to add external subrip files (SRT) to MKV videos.
 
 -Audio Codec Conversion: Convert audio streams to specified codecs and bitrates.
 
--File Organization: Move completed MKV files to a new directory and rename them.
+-File Organization: Option to move completed MKV files to a new directory and rename them.
 
--Will delete FORCED subtitles. 
+-Will delete FORCED subtitles.
+
+-Will always default the first stream. (why? some TVs dont care about default tags, they will choose the first stream as default)
+
