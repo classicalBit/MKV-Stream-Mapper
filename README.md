@@ -20,3 +20,9 @@ You just downloaded Anime MKV files or other MKV files and want to quickly renam
 
 -Will delete all streams that are not in your priority lists
 
+
+
+
+
+This repository contains example code and scripts provided without warranty or guarantee of any kind. Use of the code is at your own risk. The author assumes no responsibility for any damages or problems that may arise from the use of this code.
+
