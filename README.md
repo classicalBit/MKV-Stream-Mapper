@@ -18,3 +18,5 @@ You just downloaded Anime MKV files or other MKV files and want to quickly renam
 
 -Will always default the first stream. (why? some TVs dont care about default tags, they will choose the first stream as default)
 
+-Will delete all streams that are not in your priority lists
+
