@@ -88,17 +88,17 @@ class Manipulator:
 
         print(f"Files in directory: {files_in_directory}")
 
-        files_to_delete = [f for f in files_in_directory if os.path.splitext(f)[0] == file_name]
+        files_to_move = [f for f in files_in_directory if os.path.splitext(f)[0] == file_name]
 
-        print(f"Files to move: {files_to_delete}")
+        print(f"Files to move: {files_to_move}")
 
-        if files_to_delete:
+        if files_to_move:
             new_dir = os.path.join(dir_name, "moved")
             if not os.path.exists(new_dir):
                 os.makedirs(new_dir)
                 print(f"New directory created: {new_dir}")
 
-            for f in files_to_delete:
+            for f in files_to_move:
                 try:
                     shutil.move(os.path.join(dir_name, f), os.path.join(new_dir, f))
                     print(f"Moved: {os.path.join(dir_name, f)} to {os.path.join(new_dir, f)}")
