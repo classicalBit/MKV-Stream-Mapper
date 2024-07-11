@@ -13,3 +13,5 @@ You just downloaded Anime MKV files or other MKV files and want to quickly renam
 -Audio Codec Conversion: Convert audio streams to specified codecs and bitrates.
 
 -File Organization: Move completed MKV files to a new directory and rename them.
+
+-Will delete FORCED subtitles. 
