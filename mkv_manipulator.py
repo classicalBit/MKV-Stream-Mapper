@@ -338,11 +338,11 @@ manipulator = Manipulator(file_path=path,
                           s_codec_priority=['ass', 'subrip', 'hdmv_pgs_subtitle'],
 
                           add_srt=True,
-
+                          # srt needs to be in the same directory and have the same name
                           convert_audio={},
                           # {"dts": {"format": "ac3", "bitrate": "640k"}} # exp: will convert all dts audio streams to ac3 640k
                           move_completed_files=False
-                          # will move prcessed file(s) to a new dir and rename the completed file to the original name. Will not delete anything! Try it out :)
+                          # will move processed file(s) to a new dir and rename the completed file to the original name. Will not delete anything!
                           )
 
 manipulator.manipulate_mkv()
