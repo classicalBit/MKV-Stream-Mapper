@@ -4,6 +4,8 @@ ffmpeg_stream_sorter is a Python script designed to manipulate MKV video files, 
 
 You just downloaded Anime MKV files or other MKV files and want to quickly rename them, sort audio and/or subtitle streams and change default flags of these files? You maybe want to add an SRT file simultaniously? And on top of that convert specific audio stream codecs and define their bitrate? 
 
+![Example](example_audio_streams.png)
+
 You need to have ffmpeg-python installed.
 
 ## Features
