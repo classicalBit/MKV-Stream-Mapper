@@ -3,13 +3,13 @@
 FFmpegStreamFixer is a Python script designed to manipulate MKV video files, focusing on:
 
 
-mapping audio and subtitle streams based on user-defined priorities (language and codec type)
+- mapping audio and subtitle streams based on user-defined priorities (language and codec type)
 
-optionally adding subrip subtitles 
+- optionally adding subrip subtitles 
 
-converting audio codecs and optionally add them
+- converting audio codecs and optionally add them
 
-organizing completed files
+- organizing completed files
 
 
 
