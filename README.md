@@ -38,7 +38,7 @@ You need to have ffmpeg-python installed.
 
 - Will always default the first stream. (why? some TVs dont care about default tags, they will choose the first stream as default)
 
-- Will delete all streams that are not in your priority lists
+- Will delete all audio and subtitle streams that are not in your priority lists
 
 
 
