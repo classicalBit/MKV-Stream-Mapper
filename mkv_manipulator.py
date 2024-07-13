@@ -198,7 +198,6 @@ class Manipulator:
                         codec = "pcm"
 
                     if self.convert_audio:
-                        print("HELLO", codec)
                         for old_codec, new_dict in self.convert_audio.items():
                             new_format = new_dict["format"]
                             new_bitrate = new_dict["bitrate"]
