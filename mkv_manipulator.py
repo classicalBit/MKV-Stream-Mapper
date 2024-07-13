@@ -7,7 +7,7 @@ import shutil
 
 class Manipulator:
     def __init__(self, file_path, a_language_priority: list, s_language_priority: list,
-                 a_codec_priority, s_codec_priority, add_srt: bool, convert_audio: dict, move_completed_files: bool,
+                 a_codec_priority, s_codec_priority, add_srt: dict, convert_audio, move_completed_files: bool,
                  nan_language: str):
         self.path = Path(file_path)
         self.files = []
@@ -26,6 +26,12 @@ class Manipulator:
         self.move_completed_files = move_completed_files
 
         self.nan_language = nan_language
+
+        self.mapper_a = []
+        self.mapper_s = []
+
+        self.metadata = {}
+        self.disposition = {}
 
     def _initialize_files(self):
 
@@ -138,6 +144,16 @@ class Manipulator:
 
         print()
 
+    def print_summary(self, old, new, ffmpeg_command):
+
+        print(f"Original File:")
+        self.print_stream_info(old)
+        print(f"New File:")
+        self.print_stream_info(new)
+
+        print("ffmpeg command:")
+        print(ffmpeg_command)
+
     def get_probe_df(self, file):
 
         probe = ffmpeg.probe(file)
@@ -148,208 +164,202 @@ class Manipulator:
         streams_df.sort_index(inplace=True)
 
         if 'tags.language' in streams_df.columns:
-            streams_df['tags.language'] = streams_df['tags.language'].replace('deu', 'ger')
+            streams_df['tags.language'] = streams_df['tags.language'].replace({
+                'de': 'ger',
+                'deu': 'ger',
+                'en': 'eng',
+                'jap': 'jpn',
+                'ja': 'jpn'
+            })
+            # streams_df['tags.language'] = streams_df['tags.language'].replace('deu', 'ger')
             streams_df['tags.language'].fillna(self.nan_language, inplace=True)
 
         return streams_df
 
-    def order_audio_streams(self, audio_streams: pd.DataFrame):
+    def get_disposition(self):
 
-        if len(audio_streams) == 1:
-            ordered_audio_index = list(audio_streams.index)
-            print("ordered audio index:", ordered_audio_index)
-            return ordered_audio_index
-        else:
-            ordered_audio_index = []
+        for i in range(len(self.mapper_a)):
+            self.disposition[f'disposition:a:{i}'] = 'default' if i == 0 else '0'
 
-            for language in self.a_language_priority:
+        for i in range(len(self.mapper_s)):
+            self.disposition[f'disposition:s:{i}'] = 'default' if i == 0 else '0'
 
-                language_streams = audio_streams[audio_streams['tags.language'].str.contains(language, na=False)]
+    def map_audio_streams(self, audio_streams: pd.DataFrame, input_stream):
+
+        for language in self.a_language_priority:
+            language_streams = audio_streams[audio_streams['tags.language'].str.contains(language, na=False)]
+
+            if not language_streams.empty:
+                index = language_streams.index[0]
 
                 for codec in self.a_codec_priority:
-                    lang_codec_streams = language_streams[language_streams['codec_name'] == codec]
-                    ordered_audio_index.extend(lang_codec_streams.index.tolist())
 
-            return ordered_audio_index
+                    if codec == "pcm_s16be":
+                        codec = "pcm"
 
-    def get_metadata_audio(self, ordered_index_list: list, audio_streams: pd.DataFrame):
+                    if self.convert_audio:
+                        print("HELLO", codec)
+                        for old_codec, new_dict in self.convert_audio.items():
+                            new_format = new_dict["format"]
+                            new_bitrate = new_dict["bitrate"]
 
-        audio_metadata_dict = {}
+                            if codec == new_format:
+                                self.mapper_a.append(input_stream[f"a:{index}"])
+                                current_index = len(self.mapper_a) - 1
 
-        for idx, count in enumerate(ordered_index_list):
-            codec_name = audio_streams[audio_streams.index == count]['codec_name'].iloc[0]
-            language = audio_streams[audio_streams.index == count]['tags.language'].iloc[0]
+                                self.metadata[f"c:a:{current_index}"] = new_format
+                                self.metadata[f"b:a:{current_index}"] = new_bitrate
 
-            if codec_name == "pcm_s16be":
-                codec_name = "pcm"
+                                self.metadata[f"metadata:s:a:{current_index}"] = [
+                                    f'title={language.upper()} {new_format}',
+                                    f'language={language}']
 
-            if self.convert_audio:
-                for old_codec, sub_dict in self.convert_audio.items():
-                    if codec_name == old_codec:
-                        audio_metadata_dict[f"c:a:{idx}"] = self.convert_audio[codec_name]["format"]
-                        audio_metadata_dict[f"b:a:{idx}"] = self.convert_audio[codec_name]["bitrate"]
-                        codec_name = self.convert_audio[codec_name]["format"]
+                            if new_dict["add"]:
+                                if codec == old_codec:
+                                    self.mapper_a.append(input_stream[f"a:{index}"])
+                                    current_index = len(self.mapper_a) - 1
 
-            audio_metadata_dict[f'metadata:s:a:{idx}'] = [f'title={language.upper()} {codec_name}',
-                                                          f'language={language}']
+                                    self.metadata[f"metadata:s:a:{current_index}"] = [
+                                        f'title={language.upper()} {codec}',
+                                        f'language={language}']
 
-            if idx == 0:
-                audio_metadata_dict['disposition:a:0'] = 'default'
-            else:
-                audio_metadata_dict[f'disposition:a:{idx}'] = '0'
+                    else:
+                        lang_codec_streams = language_streams[language_streams['codec_name'] == codec]
+                        for index in lang_codec_streams.index:
+                            self.mapper_a.append(input_stream[f"a:{index}"])
+                            current_index = len(self.mapper_a) - 1
+                            self.metadata[f"metadata:s:a:{current_index}"] = [f'title={language.upper()} {codec}',
+                                                                              f'language={language}']
 
-        return audio_metadata_dict
+    def map_subtitle_streams(self, subtitle_streams: pd.DataFrame, input_stream, srt_stream):
 
-    def order_subtitle_streams(self, sub_streams: pd.DataFrame):
+        for language in self.s_language_priority:
+            language_streams = subtitle_streams[
+                (subtitle_streams['tags.language'].str.contains(language, na=False)) & (
+                        subtitle_streams['disposition.forced'] == 0)]
 
-        if len(sub_streams) == 1:
-            codec_type_count_list = list(sub_streams.index)
-            return codec_type_count_list
-        else:
-            codec_type_count_list = []
+            if not language_streams.empty or (self.add_srt["add"] and self.add_srt["language"] == language):
+                prioritized_streams = pd.DataFrame()
 
-            for language in self.s_language_priority:
-                language_filtered_streams = sub_streams[
-                    (sub_streams['tags.language'] == language) & (sub_streams['disposition.forced'] == 0)]
-                print(language_filtered_streams)
-                prioritized_streams = self.prioritize_streams(language_filtered_streams)
-                codec_type_count_list.extend(prioritized_streams.index.tolist())
+                for codec in self.s_codec_priority:
 
-        return codec_type_count_list
+                    if codec == "subrip" and srt_stream:
+                        len_map_s = len(self.mapper_s)
+                        self.mapper_s.append(srt_stream[f"s:{0}"])
 
-    def prioritize_streams(self, streams):
-        prioritized_streams = pd.DataFrame()
+                        self.metadata[f"metadata:s:s:{len_map_s}"] = [
+                            f'title={language.upper()} {codec}',
+                            f'language={language}']
 
-        for codec in self.s_codec_priority:
-            filtered_streams = streams[streams['codec_name'] == codec]
-            if len(filtered_streams) > 1:
+                    else:
 
-                frames_columns = filtered_streams.filter(like='NUMBER_OF_FRAMES').columns
-                if not frames_columns.empty:
-                    filtered_streams[frames_columns[0]] = pd.to_numeric(filtered_streams[frames_columns[0]],
-                                                                        errors='coerce')
-                    sorted_streams = filtered_streams.sort_values(by=frames_columns[0], ascending=False)
-                    prioritized_streams = prioritized_streams.append(sorted_streams.iloc[0])
-                else:
-                    filtered_df = filtered_streams[~filtered_streams['tags.title'].str.contains('forced')]
-                    prioritized_streams = prioritized_streams.append(filtered_df.iloc[0])
-                    print(f"Two identical {codec} subtitles? Will chose the first {codec} stream")
-            else:
-                prioritized_streams = prioritized_streams.append(filtered_streams)
+                        filtered_streams = subtitle_streams[subtitle_streams['codec_name'] == codec]
+                        if not filtered_streams.empty:
+                            if len(filtered_streams) > 1:
+                                frames_columns = filtered_streams.filter(like='NUMBER_OF_FRAMES').columns
 
-        return prioritized_streams
+                                if not frames_columns.empty:
+                                    filtered_streams[frames_columns[0]] = pd.to_numeric(filtered_streams[frames_columns[0]],
+                                                                                        errors='coerce')
+                                    sorted_streams = filtered_streams.sort_values(by=frames_columns[0], ascending=False)
+                                    prioritized_streams = prioritized_streams.append(sorted_streams.iloc[0])
+                                else:
+                                    filtered_df = filtered_streams[~filtered_streams['tags.title'].str.contains('forced')]
+                                    prioritized_streams = prioritized_streams.append(filtered_df.iloc[0])
+                                    print(f"Two identical {codec} subtitles? Will chose the first {codec} stream")
+                            else:
+                                prioritized_streams = prioritized_streams.append(filtered_streams)
 
-    @staticmethod
-    def get_metadata_subtitle(ordered_index_list: list, sub_df: pd.DataFrame):
+                            for index in prioritized_streams.index:
 
-        sub_metadata_dict = {}
+                                self.mapper_s.append(input_stream[f"s:{index}"])
 
-        for idx, count in enumerate(ordered_index_list):
-            codec_name = sub_df[sub_df.index == count]['codec_name'].iloc[0]
-            language = sub_df[sub_df.index == count]['tags.language'].iloc[0]
+                                if codec == "hdmv_pgs_subtitle":
+                                    codec = "pgs"
 
-            if codec_name == "hdmv_pgs_subtitle":
-                codec_name = "pgs"
-
-            sub_metadata_dict[f'metadata:s:s:{idx}'] = [f'title={language.upper()} {codec_name}',
-                                                        f'language={language}']
-            if idx == 0:
-                sub_metadata_dict['disposition:s:0'] = 'default'
-            else:
-                sub_metadata_dict[f'disposition:s:{idx}'] = '0'
-
-        return sub_metadata_dict
+                                self.metadata[f"metadata:s:s:{len(self.mapper_s)-1}"] = [
+                                    f'title={language.upper()} {codec}',
+                                    f'language={language}']
 
     def manipulate_mkv(self):
 
         for file in self.files:
 
             input_stream = ffmpeg.input(file)
-            video_title_name = f"{file}"
-            video_stream = input_stream["v"]
 
             output_file = self.create_output_path(file)
 
+            video_title_name = f"{file}"
+
             probe_df = self.get_probe_df(file)
+
+            srt_input_stream = None
+
+            if self.add_srt["add"]:
+                srt_file = self.create_srt_file_name(file)
+                srt_input_stream = ffmpeg.input(srt_file)
 
             audio_df = probe_df[probe_df['codec_type'] == 'audio'].reset_index(drop=True)
             sub_df = probe_df[probe_df['codec_type'] == 'subtitle'].reset_index(drop=True)
-            len_sub_df = len(sub_df)
 
-            a_ordered_index_list = self.order_audio_streams(audio_df)
-            ordered_audio_input_list = [input_stream[f"a:{i}"] for i in a_ordered_index_list]
-            a_metadata_dict = self.get_metadata_audio(a_ordered_index_list, audio_df)
+            self.map_audio_streams(audio_df, input_stream)
+            self.map_subtitle_streams(sub_df, input_stream, srt_input_stream)
+            self.get_disposition()
+            self.metadata['metadata:s:v:0'] = f"title={video_title_name}"
 
-            if self.add_srt:
-                srt_file = self.create_srt_file_name(file)
-                srt_probe_df = self.get_probe_df(srt_file)
-                srt_probe_df["tags.language"] = "ger"
-                srt_probe_df["tags.title"] = "GER subrip"
-                sub_df = pd.concat([sub_df, srt_probe_df], ignore_index=True)
-                srt_input_stream = ffmpeg.input(srt_file)
+            mapped_input = self.mapper_a + self.mapper_s
 
-                s_ordered_index_list = self.order_subtitle_streams(sub_df)
-                ordered_sub_input_list = [input_stream[f"s:{i}"] for i in s_ordered_index_list if i < len_sub_df]
-                insert_position = next((i for i, idx in enumerate(s_ordered_index_list) if idx >= len_sub_df), None)
-
-                if insert_position is not None:
-                    ordered_sub_input_list.insert(insert_position, srt_input_stream)
-                else:
-                    ordered_sub_input_list.append(srt_input_stream)
-
-                s_metadata_dict = self.get_metadata_subtitle(s_ordered_index_list, sub_df)
-
-            else:
-                s_ordered_index_list = self.order_subtitle_streams(sub_df)
-                ordered_sub_input_list = [input_stream[f"s:{i}"] for i in s_ordered_index_list]
-                s_metadata_dict = self.get_metadata_subtitle(s_ordered_index_list, sub_df)
+            mapped_input.insert(0, input_stream["v:0"])
 
             output_ffmpeg = (
+
                 ffmpeg
                     .output(
-                    video_stream,
-                    *ordered_audio_input_list,
-                    *ordered_sub_input_list,
+                    *mapped_input,
                     output_file,
                     vcodec="copy",
                     acodec="copy",
                     scodec="copy",
+                    # ch_layout="5.1",
                     **{"max_interleave_delta": "0"},
-                    **{'metadata:s:v:0': f"title={video_title_name}"},
-                    **a_metadata_dict,
-                    **s_metadata_dict,
+                    **self.metadata,
+                    **self.disposition
+
                 )
             )
 
             output_ffmpeg.run()
 
-            self.print_stream_info(file)
-            self.print_stream_info(output_file)
+            self.print_summary(file, output_file, ffmpeg.get_args(output_ffmpeg))
 
             if self.move_completed_files:
                 self.move_files_and_rename(file)
 
 
 path = r""
-# can be either a file or a directory
+# file or directory
 
 manipulator = Manipulator(file_path=path,
 
                           a_language_priority=["jpn", "ger", "eng"],
-                          a_codec_priority=['eac3', 'ac3', 'aac', 'opus', 'pcm_s16be', 'dts'],
-
-                          s_language_priority=["ger", "eng"],
-                          s_codec_priority=['ass', 'subrip', 'hdmv_pgs_subtitle'],
-
-                          add_srt=True,
+                          a_codec_priority=['aac', 'ac3', 'eac3', 'opus', 'pcm_s16be', 'dts'],
 
                           convert_audio={},
-                          # {"dts": {"format": "ac3", "bitrate": "640k"}} # exp: will convert all dts audio streams to ac3 640k
+                          # example: will convert all dts audio streams to ac3 640k
+                          # {"dts": {"add":False, "format": "ac3", "bitrate": "640k"}}
+                          # if add is True it will not delete the dts streams
+
+                          s_language_priority=["ger", "eng"],
+                          s_codec_priority=['subrip', 'hdmv_pgs_subtitle','ass'],
+
+                          add_srt={"add": True, "language": "ger"},
+
                           move_completed_files=False,
                           # will move completed files to a new dir and rename the completed file to the original name
                           nan_language="ger"
-                          # sometimes the language of subtitles or audio is not specified. Check before (with manipulate..print_stream_info(file))
+                          # sometimes the language of subtitles or audio is not specified. Check before (with manipulate.print_stream_info(file))
                           # and then define it manually here. Will replace all NaN tags.language with "ger" for example
                           )
+
 
 manipulator.manipulate_mkv()
