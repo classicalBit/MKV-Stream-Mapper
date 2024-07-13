@@ -1,8 +1,20 @@
-# ffmpeg_stream_sorter
+# FFmpegStreamFixer
 
-ffmpeg_stream_sorter is a Python script designed to manipulate MKV video files, focusing on reordering audio and subtitle streams based on user-defined priorities, optionally adding subtitles, converting audio codecs, and organizing completed files.
+FFmpegStreamFixer is a Python script designed to manipulate MKV video files, focusing on:
 
-You got one or multiple Anime MKV files or other MKV files and want to quickly rename them, sort audio and/or subtitle streams and change default flags of these files? You maybe want to add an SRT file simultaniously? And on top of that convert specific audio stream codecs and define their bitrate? Then this code might help. 
+
+reordering audio and subtitle streams based on user-defined priorities (language and codec type)
+
+optionally adding subrip subtitles 
+
+converting audio codecs and optionally add them
+
+organizing completed files
+
+
+
+It can do all of that in one run.
+
 
 ![Example - Audio streams got renamed and resorted](example_audio_streams.png)
 ![Example - Subtitle streams got renamed and resorted, SRT was added and Forced Subs got deleted](example_subtitle_streams.png)
@@ -15,9 +27,12 @@ You need to have ffmpeg-python installed.
 
 -Subtitle Addition: Option to add external subrip files (SRT) to MKV videos.
 
--Audio Codec Conversion: Convert audio streams to specified codecs and bitrates.
+-Audio Codec Conversion: Convert audio streams to specified codecs and bitrates. Discard the old one or keep them
 
 -File Organization: Option to move completed MKV files to a new directory and rename them.
+
+
+
 
 -Will delete FORCED subtitles.
 
