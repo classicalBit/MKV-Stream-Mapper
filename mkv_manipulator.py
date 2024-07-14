@@ -329,6 +329,11 @@ class Manipulator:
 
             output_ffmpeg.run()
 
+            self.mapper_s.clear()
+            self.mapper_a.clear()
+            self.metadata.clear()
+            self.disposition.clear()
+
             self.print_summary(file, output_file, ffmpeg.get_args(output_ffmpeg))
 
             if self.move_completed_files:
