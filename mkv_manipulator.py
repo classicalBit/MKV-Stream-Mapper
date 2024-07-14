@@ -341,7 +341,7 @@ class Manipulator:
 
 
 path = r""
-# file or directory
+# file or directory path
 
 manipulator = Manipulator(file_path=path,
 
@@ -359,7 +359,7 @@ manipulator = Manipulator(file_path=path,
                           add_srt={"add": True, "language": "ger"},
 
                           move_completed_files=False,
-                          # will move completed files to a new dir and rename the completed file to the original name
+                          # will move processed files to a new dir and rename the completed file to the original name.
                           nan_language="ger"
                           # sometimes the language of subtitles or audio is not specified. Check before (with manipulate.print_stream_info(file))
                           # and then define it manually here. Will replace all NaN tags.language with "ger" for example
