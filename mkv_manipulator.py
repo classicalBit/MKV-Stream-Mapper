@@ -130,6 +130,12 @@ class Manipulator:
     def get_probe(file):
         return ffmpeg.probe(file)
 
+    def clear_dicts(self):
+        self.mapper_s.clear()
+        self.mapper_a.clear()
+        self.metadata.clear()
+        self.disposition.clear()
+
     def print_stream_info(self, file_path):
 
         probe = self.get_probe(file=file_path)
@@ -329,10 +335,7 @@ class Manipulator:
 
             output_ffmpeg.run()
 
-            self.mapper_s.clear()
-            self.mapper_a.clear()
-            self.metadata.clear()
-            self.disposition.clear()
+            self.clear_dicts()
 
             self.print_summary(file, output_file, ffmpeg.get_args(output_ffmpeg))
 
