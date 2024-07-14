@@ -25,6 +25,8 @@ You need to have ffmpeg-python installed.
 
 - Audio and Subtitle Prioritization: Prioritize and map/order audio and subtitle streams based on language and codec preferences.
 
+- Rename those streams to Language and Codec type, for example "ENG ac3"
+
 - Subtitle Addition: Option to add external subrip files (SRT) to MKV videos.
 
 - Audio Codec Conversion: Convert audio streams to specified codecs and bitrates. Discard the old one or keep them
