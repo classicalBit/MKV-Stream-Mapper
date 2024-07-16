@@ -269,7 +269,7 @@ class Manipulator:
                                     sorted_streams = filtered_streams.sort_values(by=frames_columns[0], ascending=False)
                                     prioritized_streams = prioritized_streams.append(sorted_streams.iloc[0])
                                 else:
-                                    filtered_df = filtered_streams[~filtered_streams['tags.title'].str.contains('forced')]
+                                    filtered_df = filtered_streams[~filtered_streams['tags.title'].str.contains('forced', case=False)]
                                     prioritized_streams = prioritized_streams.append(filtered_df.iloc[0])
                                     print(f"Two identical {codec} subtitles? Will chose the first {codec} stream")
                             else:
