@@ -34,13 +34,22 @@ You need to have ffmpeg-python installed.
 - File Organization: Option to move completed MKV files to a new directory and rename them.
 
 
-
-
-- Will delete FORCED subtitles.
+  
+- Will delete FORCED subtitles (maybe I will make it as an option later).
 
 - Will always default the first stream. (why? some TVs dont care about default tags, they will choose the first stream as default)
 
 - Will delete all audio and subtitle streams that are not in your priority lists
+
+
+## Limitations:
+
+- curretly doesnt work well, when you have have multiple audio streams with the same codec and the same language.
+- 
+- Fell free to copy the code an change it for your purpose. 
+
+
+
 
 
 
