@@ -248,7 +248,7 @@ class Manipulator:
 
                 for codec in self.s_codec_priority:
 
-                    if codec == "subrip" and srt_stream:
+                    if codec == "subrip" and srt_stream and self.add_srt["language"] == language:
                         len_map_s = len(self.mapper_s)
                         self.mapper_s.append(srt_stream[f"s:{0}"])
 
@@ -258,7 +258,10 @@ class Manipulator:
 
                     else:
 
-                        filtered_streams = subtitle_streams[subtitle_streams['codec_name'] == codec]
+                        filtered_streams = subtitle_streams[
+                            (subtitle_streams['codec_name'] == codec) & (
+                                    subtitle_streams['disposition.forced'] == 0) & (subtitle_streams['tags.language'] == language)]
+
                         if not filtered_streams.empty:
                             if len(filtered_streams) > 1:
                                 frames_columns = filtered_streams.filter(like='NUMBER_OF_FRAMES').columns
