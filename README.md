@@ -35,7 +35,7 @@ You need to have ffmpeg-python installed.
 
 
   
-- Will delete FORCED subtitles (maybe I will make it as an option later).
+- Will delete FORCED subtitles (maybe I will make it as an option later). This is especially useful for Anime.
 
 - Will always default the first stream. (why? some TVs dont care about default tags, they will choose the first stream as default)
 
