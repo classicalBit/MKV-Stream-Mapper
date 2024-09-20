@@ -244,9 +244,10 @@ class Manipulator:
                         subtitle_streams['disposition.forced'] == 0)]
 
             if not language_streams.empty or (self.add_srt["add"] and self.add_srt["language"] == language):
-                prioritized_streams = pd.DataFrame()
 
                 for codec in self.s_codec_priority:
+                    prioritized_streams = pd.DataFrame()
+
 
                     if codec == "subrip" and srt_stream and self.add_srt["language"] == language:
                         len_map_s = len(self.mapper_s)
