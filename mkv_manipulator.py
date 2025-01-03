@@ -198,39 +198,53 @@ class Manipulator:
             if not language_streams.empty:
                 index = language_streams.index[0]
 
+                # channel_value = language_streams.at[index, 'channel']
+
                 for codec in self.a_codec_priority:
 
-                    if codec == "pcm_s16be":
-                        codec = "pcm"
-
                     if self.convert_audio:
-                        for old_codec, new_dict in self.convert_audio.items():
-                            new_format = new_dict["format"]
-                            new_bitrate = new_dict["bitrate"]
+                        convert_dict = self.convert_audio
 
-                            if codec == new_format:
+                        old_format = convert_dict["convert"]
+                        new_format = convert_dict["format"]
+                        new_bitrate = convert_dict["bitrate"]
+                        add = convert_dict["add"] # bool
+
+                        if codec == new_format and old_format == language_streams["codec_name"].iat[-1]:
+
+                            self.mapper_a.append(input_stream[f"a:{index}"])
+                            current_index = len(self.mapper_a) - 1
+
+                            self.metadata[f"c:a:{current_index}"] = new_format
+                            self.metadata[f"b:a:{current_index}"] = new_bitrate
+
+                            self.metadata[f"metadata:s:a:{current_index}"] = [
+                                f'title={language.upper()} {new_format}',
+                                f'language={language}']
+
+                        if add:
+                            if codec == old_format:
                                 self.mapper_a.append(input_stream[f"a:{index}"])
                                 current_index = len(self.mapper_a) - 1
 
-                                self.metadata[f"c:a:{current_index}"] = new_format
-                                self.metadata[f"b:a:{current_index}"] = new_bitrate
-
                                 self.metadata[f"metadata:s:a:{current_index}"] = [
-                                    f'title={language.upper()} {new_format}',
+                                    f'title={language.upper()} {codec}',
                                     f'language={language}']
 
-                            if new_dict["add"]:
-                                if codec == old_codec:
-                                    self.mapper_a.append(input_stream[f"a:{index}"])
-                                    current_index = len(self.mapper_a) - 1
-
-                                    self.metadata[f"metadata:s:a:{current_index}"] = [
-                                        f'title={language.upper()} {codec}',
-                                        f'language={language}']
+                        elif codec != old_format:
+                            lang_codec_streams = language_streams[language_streams['codec_name'] == codec]
+                            for index in lang_codec_streams.index:
+                                # channel_value = lang_codec_streams.at[index, 'channel']
+                                # print(channel_value)
+                                self.mapper_a.append(input_stream[f"a:{index}"])
+                                current_index = len(self.mapper_a) - 1
+                                self.metadata[f"metadata:s:a:{current_index}"] = [f'title={language.upper()} {codec}',
+                                                                                  f'language={language}']
 
                     else:
                         lang_codec_streams = language_streams[language_streams['codec_name'] == codec]
                         for index in lang_codec_streams.index:
+                            # channel_value = lang_codec_streams.at[index, 'channel']
                             self.mapper_a.append(input_stream[f"a:{index}"])
                             current_index = len(self.mapper_a) - 1
                             self.metadata[f"metadata:s:a:{current_index}"] = [f'title={language.upper()} {codec}',
