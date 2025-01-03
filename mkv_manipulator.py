@@ -371,7 +371,7 @@ manipulator = Manipulator(file_path=path,
 
                           convert_audio={},
                           # example: will convert all dts audio streams to ac3 640k
-                          # {"dts": {"add":False, "format": "ac3", "bitrate": "640k"}}
+                          # {"convert":"dts", "format": "ac3", "bitrate": "640k", "add":False}
                           # if add is True it will not delete the dts streams
 
                           s_language_priority=["ger", "eng"],
