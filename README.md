@@ -44,6 +44,8 @@ You need to have ffmpeg-python installed.
 
 ## Limitations:
 
+- if the metadata (title, language) isnt set properly, you probably installed ffmpeg-python via pip. You can fix it by manipulating the ffmpeg-python code. Please look here: https://github.com/kkroening/ffmpeg-python/issues/450
+
 - curretly doesnt work well, when you have have multiple audio streams with the same codec and the same language.
   
 - Fell free to copy the code an change it for your purpose. 
